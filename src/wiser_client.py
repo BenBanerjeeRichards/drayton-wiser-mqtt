@@ -23,7 +23,7 @@ class WiserClient:
         }
         room_stats = [
             RoomStatState(id=s.id,
-                          temperature=Decimal(s.MeasuredTemperature / 10),
+                          temperature=s.MeasuredTemperature / 10.0,
                           humidity=s.MeasuredHumidity) for s in info.RoomStat
         ]
 
@@ -31,8 +31,8 @@ class WiserClient:
             RoomState(id=r.id,
                       name=r.Name,
                       room_stat_id=r.RoomStatId,
-                      current_temperature=Decimal(r.CalculatedTemperature / 10),
-                      setpoint_temperature=Decimal(r.CurrentSetPoint / 10),
+                      current_temperature=r.CalculatedTemperature / 10.0,
+                      setpoint_temperature=r.CurrentSetPoint / 10.0,
                       demand_percent=r.PercentageDemand,
                       is_firing=r.ControlOutputState == "On",
                       control_source=map_control_source[r.SetpointOrigin],

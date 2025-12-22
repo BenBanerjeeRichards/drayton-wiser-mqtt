@@ -1,7 +1,6 @@
 from typing import Any
 from pydantic import BaseModel
 from typing_extensions import Literal
-from decimal import Decimal
 
 
 class Config(BaseModel):
@@ -31,8 +30,8 @@ class RoomState(BaseModel):
     id: int
     name: str
     room_stat_id: int | None = None
-    current_temperature: Decimal
-    setpoint_temperature: Decimal
+    current_temperature: float
+    setpoint_temperature: float
     demand_percent: int
     is_firing: bool
     control_source: Literal["Schedule", "Boost", "Away", "Eco"]
@@ -42,7 +41,7 @@ class RoomState(BaseModel):
 
 class RoomStatState(BaseModel):
     id: int
-    temperature: Decimal
+    temperature: float
     humidity: int
 
 
