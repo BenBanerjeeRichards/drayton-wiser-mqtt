@@ -4,6 +4,14 @@ from typing_extensions import Literal
 from decimal import Decimal
 
 
+class Config(BaseModel):
+    mqtt_username: str
+    mqtt_password: str
+    mqtt_host: str
+    mqtt_port: int
+    wiser_ip: str
+    wiser_secret: str
+
 class HeatingChannelState(BaseModel):
     id: int
     is_firing: bool
@@ -14,7 +22,7 @@ class HeatingChannelState(BaseModel):
 class HotWaterChannelState(BaseModel):
     id: int
     is_firing: bool
-    control_source: Literal["Schedule", "Boost", "Away"]
+    control_source: Literal["Schedule", "Boost", "Away", "Eco"]
     boost_ends_at_unix: int | None
     schedule_id: int | None
 
@@ -27,7 +35,7 @@ class RoomState(BaseModel):
     setpoint_temperature: Decimal
     demand_percent: int
     is_firing: bool
-    control_source: Literal["Schedule", "Boost", "Away"]
+    control_source: Literal["Schedule", "Boost", "Away", "Eco"]
     boost_ends_at_unix: int | None = None
     schedule_id: int | None
 
@@ -170,14 +178,14 @@ class HotWater(BaseModel):
     ScheduledWaterHeatingState: str
     HotWaterRelayState: Literal["On", "Off"]
     # Description of what is firing HW
-    HotWaterDescription: Literal["FromBoost", "FromSchedule", "FromAwayMode"]
+    HotWaterDescription: Literal["FromBoost", "FromSchedule", "FromAwayMode", "FromEcoIQ"]
 
 
 class Room(BaseModel):
     id: int
     ManualSetPoint: int | None = None
     # Where the set point comes from. FromNoControl => not used
-    SetpointOrigin: Literal["FromSchedule", "FromManualOverride", "FromBoost", "FromNoControl", "FromAwayMode"]
+    SetpointOrigin: Literal["FromSchedule", "FromManualOverride", "FromBoost", "FromNoControl", "FromAwayMode", "FromEcoIQ"]
     OverrideType: str | None = None
     # If set we are not following the scheudle
     OverrideSetpoint: int | None = None

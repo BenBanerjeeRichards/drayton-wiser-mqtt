@@ -15,10 +15,11 @@ class WiserClient:
     def get_state(self) -> WiserSate:
         # Summarise the info from the wiser domain endpoint
         info = self.api.get_info()
-        map_control_source: dict[str, Literal["Boost", "Schedule", "Away"]] = {
+        map_control_source: dict[str, Literal["Boost", "Schedule", "Away", "Eco"]] = {
             "FromBoost": "Boost",
             "FromSchedule": "Schedule",
-            "FromAwayMode": "Away"
+            "FromAwayMode": "Away",
+            "FromEcoIQ": "Eco"
         }
         room_stats = [
             RoomStatState(id=s.id,
