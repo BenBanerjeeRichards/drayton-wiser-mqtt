@@ -46,7 +46,7 @@ class RoomStatState(BaseModel):
     humidity: int
 
 
-class WiserSate(BaseModel):
+class WiserState(BaseModel):
     hot_water_channels: list[HotWaterChannelState]
     heating_channels: list[HeatingChannelState]
     rooms: list[RoomState]
