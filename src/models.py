@@ -4,6 +4,8 @@ from pydantic import BaseModel
 from typing_extensions import Literal
 
 
+ControlSource = Literal["Boost", "Schedule", "Away", "Eco", "ManualOverride"]
+
 class Config(BaseModel):
     mqtt_username: str
     mqtt_password: str
@@ -22,7 +24,7 @@ class HeatingChannelState(BaseModel):
 class HotWaterChannelState(BaseModel):
     id: int
     is_firing: bool
-    control_source: Literal["Schedule", "Boost", "Away", "Eco"]
+    control_source: ControlSource
     boost_ends_at_unix: int | None
     schedule_id: int | None
 
@@ -35,7 +37,7 @@ class RoomState(BaseModel):
     setpoint_temperature: float
     demand_percent: int
     is_firing: bool
-    control_source: Literal["Schedule", "Boost", "Away", "Eco"]
+    control_source: ControlSource
     boost_ends_at_unix: int | None = None
     schedule_id: int | None
 

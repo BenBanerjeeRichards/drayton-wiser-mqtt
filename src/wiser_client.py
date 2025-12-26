@@ -4,7 +4,7 @@ import httpx
 from tenacity import retry, wait_exponential, stop_after_attempt
 
 from src.models import WiserRoot, WiserState, RoomStatState, RoomState, HeatingChannelState, \
-    HotWaterChannelState, SetpointOrigin
+    HotWaterChannelState, SetpointOrigin, ControlSource
 
 
 class WiserClient:
@@ -16,12 +16,12 @@ class WiserClient:
         # Summarise the info from the wiser domain endpoint
         info = await self.api.get_info()
         # TODO: currently manual and boost treated the same
-        map_control_source: dict[str, Literal["Boost", "Schedule", "Away", "Eco"]] = {
+        map_control_source: dict[str, ControlSource] = {
             SetpointOrigin.BOOST: "Boost",
             SetpointOrigin.SCHEDULE: "Schedule",
             SetpointOrigin.AWAY: "Away",
             SetpointOrigin.ECO_IQ: "Eco",
-            SetpointOrigin.MANUAL_OVERRIDE: "Boost",
+            SetpointOrigin.MANUAL_OVERRIDE: "ManualOverride",
             SetpointOrigin.MANUAL_MODE: "Boost"
         }
         room_stats = [
@@ -109,14 +109,14 @@ class WiserApi:
             "Secret": self.secret
         }
 
-    @retry(wait=wait_exponential(max=30), stop=stop_after_attempt(5))
+    @retry(wait=wait_exponential(max=30), stop=stop_after_attempt(8))
     async def patch(self, item: Literal["Room", "HotWater"], item_id: int, params: dict):
         async with httpx.AsyncClient() as client:
             url = f"http://{self.ip}/data/domain/{item}/{item_id}/"
             res = await client.patch(url, headers=self.headers, json=params)
             res.raise_for_status()
 
-    @retry(wait=wait_exponential(max=30), stop=stop_after_attempt(5))
+    @retry(wait=wait_exponential(max=30), stop=stop_after_attempt(8))
     async def get_info(self):
         async with httpx.AsyncClient(timeout=10) as client:
             url = f"http://{self.ip}/data/domain/"

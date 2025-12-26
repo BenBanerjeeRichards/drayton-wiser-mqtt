@@ -6,7 +6,7 @@ from src.models import WiserState
 # cache wiser state for 1 minute
 CACHE_DURATION_SEC = 60
 
-class WiserStateApi:
+class CachedWiserClient:
 
     def __init__(self, wiser_client: WiserClient):
         self.wiser_client = wiser_client
