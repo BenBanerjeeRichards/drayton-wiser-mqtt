@@ -60,10 +60,10 @@ class WiserClient:
 
         return WiserSate(hot_water_channels=hot_waters, heating_channels=heatings, room_stats=room_stats, rooms=rooms)
 
-    def boost_heating(self, room_id: int, temperature: int, duration_minutes: int):
+    async def boost_heating(self, room_id: int, temperature: int, duration_minutes: int):
         assert 50 <= temperature <= 240
         assert duration_minutes > 0
-        self.api.patch("Room", room_id, {
+        await self.api.patch("Room", room_id, {
             "RequestOverride": {
                 "Type": "Manual",
                 "Originator": "App",
@@ -72,16 +72,16 @@ class WiserClient:
             }
         })
 
-    def cancel_heating_boost(self, room_id: int):
-        self.api.patch("Room", room_id, {
+    async def cancel_heating_boost(self, room_id: int):
+        await self.api.patch("Room", room_id, {
             "RequestOverride": {
                 "Type": "None",
             }
         })
 
-    def boost_hot_water(self, water_id: int, duration_minutes: int) -> None:
+    async def boost_hot_water(self, water_id: int, duration_minutes: int) -> None:
         assert 0 <= duration_minutes <= 60 * 3
-        self.api.patch("HotWater", water_id, {
+        await self.api.patch("HotWater", water_id, {
             "RequestOverride": {
                 "Type": "Manual",
                 "Originator": "App",
@@ -90,8 +90,8 @@ class WiserClient:
             }
         })
 
-    def cancel_hot_water_boost(self, water_id: int):
-        self.api.patch("HotWater", water_id, {
+    async def cancel_hot_water_boost(self, water_id: int):
+        await self.api.patch("HotWater", water_id, {
             "RequestOverride": {
                 "Type": "None",
             }
