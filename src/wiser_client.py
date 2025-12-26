@@ -1,10 +1,9 @@
 from typing import Literal
 
-import requests
+import httpx
 
 from src.models import WiserRoot, WiserSate, RoomStatState, RoomState, HeatingChannelState, \
     HotWaterChannelState, SetpointOrigin
-from decimal import Decimal
 
 
 class WiserClient:
@@ -12,9 +11,9 @@ class WiserClient:
     def __init__(self, ip: str, secret: str) -> None:
         self.api = WiserApi(ip, secret)
 
-    def get_state(self) -> WiserSate:
+    async def get_state(self) -> WiserSate:
         # Summarise the info from the wiser domain endpoint
-        info = self.api.get_info()
+        info = await self.api.get_info()
         # TODO: currently manual and boost treated the same
         map_control_source: dict[str, Literal["Boost", "Schedule", "Away", "Eco"]] = {
             SetpointOrigin.BOOST: "Boost",
@@ -104,20 +103,21 @@ class WiserApi:
     def __init__(self, ip: str, secret: str) -> None:
         self.ip = ip
         self.secret = secret
-
-    def patch(self, item: Literal["Room", "HotWater"], item_id: int, params: dict):
-        url = f"http://{self.ip}/data/domain/{item}/{item_id}/"
-        res = requests.patch(url, headers=self._get_headers(), json=params)
-        res.raise_for_status()
-
-    def get_info(self):
-        url = f"http://{self.ip}/data/domain/"
-        res = requests.get(url, headers=self._get_headers())
-        res.raise_for_status()
-        return WiserRoot(**res.json())
-
-    def _get_headers(self) -> dict:
-        return {
+        self.headers = {
             "Content-Type": "application/json",
             "Secret": self.secret
         }
+
+    async def patch(self, item: Literal["Room", "HotWater"], item_id: int, params: dict):
+        async with httpx.AsyncClient() as client:
+            url = f"http://{self.ip}/data/domain/{item}/{item_id}/"
+            res = await client.patch(url, headers=self.headers, json=params)
+            res.raise_for_status()
+
+    async def get_info(self):
+        async with httpx.AsyncClient() as client:
+            url = f"http://{self.ip}/data/domain/"
+            res = await client.get(url, headers=self.headers)
+            res.raise_for_status()
+            return WiserRoot(**res.json())
+

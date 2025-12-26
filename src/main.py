@@ -22,7 +22,7 @@ async def async_main():
         # proof of concept
         while True:
             logging.info("Publishing wiser stats to MQTT")
-            state = wiser_client.get_state()
+            state = await wiser_client.get_state()
             print(state.room_stats[0])
 
             for stat in state.room_stats:
