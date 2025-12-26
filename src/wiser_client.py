@@ -3,7 +3,7 @@ from typing import Literal
 import requests
 
 from src.models import WiserRoot, WiserSate, RoomStatState, RoomState, HeatingChannelState, \
-    HotWaterChannelState
+    HotWaterChannelState, SetpointOrigin
 from decimal import Decimal
 
 
@@ -15,11 +15,14 @@ class WiserClient:
     def get_state(self) -> WiserSate:
         # Summarise the info from the wiser domain endpoint
         info = self.api.get_info()
+        # TODO: currently manual and boost treated the same
         map_control_source: dict[str, Literal["Boost", "Schedule", "Away", "Eco"]] = {
-            "FromBoost": "Boost",
-            "FromSchedule": "Schedule",
-            "FromAwayMode": "Away",
-            "FromEcoIQ": "Eco"
+            SetpointOrigin.BOOST: "Boost",
+            SetpointOrigin.SCHEDULE: "Schedule",
+            SetpointOrigin.AWAY: "Away",
+            SetpointOrigin.ECO_IQ: "Eco",
+            SetpointOrigin.MANUAL_OVERRIDE: "Boost",
+            SetpointOrigin.MANUAL_MODE: "Boost"
         }
         room_stats = [
             RoomStatState(id=s.id,
@@ -61,7 +64,6 @@ class WiserClient:
     def boost_heating(self, room_id: int, temperature: int, duration_minutes: int):
         assert 50 <= temperature <= 240
         assert duration_minutes > 0
-        # self.cancel_heating_boost(room_id)
         self.api.patch("Room", room_id, {
             "RequestOverride": {
                 "Type": "Manual",

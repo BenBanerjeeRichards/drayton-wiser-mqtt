@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Any
 from pydantic import BaseModel
 from typing_extensions import Literal
@@ -55,6 +56,16 @@ class WiserSate(BaseModel):
 # Below is the structure of the Wiser data
 # Gemini generated from single request
 # will need to refine this as we find out all the optional fields
+
+
+class SetpointOrigin(str, Enum):
+    SCHEDULE = "FromSchedule"
+    MANUAL_OVERRIDE = "FromManualOverride"
+    BOOST = "FromBoost"
+    NO_CONTROL = "FromNoControl"
+    AWAY = "FromAwayMode"
+    ECO_IQ = "FromEcoIQ"
+    MANUAL_MODE = "FromManualMode"
 
 class BoilerSettings(BaseModel):
     ControlType: str
@@ -177,14 +188,14 @@ class HotWater(BaseModel):
     ScheduledWaterHeatingState: str
     HotWaterRelayState: Literal["On", "Off"]
     # Description of what is firing HW
-    HotWaterDescription: Literal["FromBoost", "FromSchedule", "FromAwayMode", "FromEcoIQ"]
+    HotWaterDescription: SetpointOrigin
 
 
 class Room(BaseModel):
     id: int
     ManualSetPoint: int | None = None
     # Where the set point comes from. FromNoControl => not used
-    SetpointOrigin: Literal["FromSchedule", "FromManualOverride", "FromBoost", "FromNoControl", "FromAwayMode", "FromEcoIQ"]
+    SetpointOrigin: SetpointOrigin
     OverrideType: str | None = None
     # If set we are not following the scheudle
     OverrideSetpoint: int | None = None
