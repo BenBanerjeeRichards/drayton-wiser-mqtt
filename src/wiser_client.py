@@ -153,13 +153,16 @@ def wiser_to_state(info: WiserRoot) -> WiserState:
                             room_ids=h.RoomIds) for h in info.HeatingChannel
     ]
 
-    hot_waters = [
-        HotWaterChannelState(id=h.id,
+    hot_waters = []
+    for h in info.HotWater:
+        control_source = map_control_source[h.HotWaterDescription]
+        if h.Mode == "Auto" and h.HotWaterDescription == SetpointOrigin.MANUAL_OVERRIDE and h.WaterHeatingState == h.ScheduledWaterHeatingState:
+            control_source = "Schedule"
+        hot_waters.append(HotWaterChannelState(id=h.id,
                              is_firing=h.HotWaterRelayState == "On",
-                             control_source=map_control_source[h.HotWaterDescription],
+                             control_source=control_source,
                              boost_ends_at_unix=h.OverrideTimeoutUnixTime,
-                             schedule_id=h.ScheduleId) for h in info.HotWater
-    ]
+                             schedule_id=h.ScheduleId))
 
     return WiserState(hot_water_channels=hot_waters, heating_channels=heatings, room_stats=room_stats, rooms=rooms)
 

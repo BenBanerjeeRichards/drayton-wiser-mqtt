@@ -38,3 +38,12 @@ class CachedWiserClient:
     @retry(wait=wait_fixed(wait=3), stop=stop_after_attempt(3))
     async def cancel_heating_boost(self, room_id):
         await self.wiser_client.cancel_heating_boost(room_id)
+
+    @retry(wait=wait_fixed(wait=3), stop=stop_after_attempt(3))
+    async def boost_hot_water(self, channel_id: int, duration_minutes: int) -> None:
+        await self.wiser_client.boost_hot_water(channel_id, duration_minutes)
+
+    @retry(wait=wait_fixed(wait=3), stop=stop_after_attempt(3))
+    async def cancel_hot_water(self, channel_id: int) -> None:
+        await self.wiser_client.cancel_hot_water_boost(channel_id)
+

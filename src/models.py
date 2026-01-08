@@ -8,7 +8,13 @@ class BoostHeatingRequest(BaseModel):
     temperature: float
     duration_minutes: int
 
+
+class BoostHotWaterRequest(BaseModel):
+    duration_minutes: int
+
+
 ControlSource = Literal["Boost", "Schedule", "Away", "Eco", "ManualOverride", "Manual"]
+
 
 class Config(BaseModel):
     mqtt_username: str
@@ -18,6 +24,7 @@ class Config(BaseModel):
     wiser_ip: str
     wiser_secret: str
     disable_mqtt: bool = False
+
 
 class HeatingChannelState(BaseModel):
     id: int
@@ -77,6 +84,7 @@ class SetpointOrigin(str, Enum):
     AWAY = "FromAwayMode"
     ECO_IQ = "FromEcoIQ"
     MANUAL_MODE = "FromManualMode"
+
 
 class BoilerSettings(BaseModel):
     ControlType: str

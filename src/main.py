@@ -8,9 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from fastapi.params import Depends
 from starlette.responses import FileResponse
-from starlette.staticfiles import StaticFiles
 
-from src.models import Config, BoostHeatingRequest
+from src.models import Config, BoostHeatingRequest, BoostHotWaterRequest
 from src.mqtt import WiserMqtt
 from src.wiser_client import WiserClient
 from aiomqtt import Client
@@ -103,19 +102,40 @@ def create_fastapi():
         info = await cached_wiser.get(ignore_cache=True)
         return info.model_dump()
 
-    class SPAStaticFiles(StaticFiles):
-        async def get_response(self, path: str, scope):
-            try:
-                return await super().get_response(path, scope)
-            except (HTTPException, Exception):
-                # If the file isn't found, serve the main index.html
-                return FileResponse("../thermostat-fe/dist/index.html")
+    @app.patch("/api/hot_water/{channel_id}/boost")
+    async def boost_hot_water(boost_req: BoostHotWaterRequest, channel_id: int,
+                              cached_wiser: Annotated[CachedWiserClient, Depends(get_cached_wiser_client)]):
+        await cached_wiser.boost_hot_water(channel_id, boost_req.duration_minutes)
+        info = await cached_wiser.get(ignore_cache=True)
+        return info.model_dump()
 
+    @app.patch("/api/hot_water/{channel_id}/boost/cancel")
+    async def cancel_hot_water_boost(channel_id: int,
+                                     cached_wiser: Annotated[CachedWiserClient, Depends(get_cached_wiser_client)]):
+        await cached_wiser.cancel_hot_water(channel_id)
+        info = await cached_wiser.get(ignore_cache=True)
+        return info.model_dump()
+
+
+    # Serve react application from here
+    # In the future we should really split this up to allow separate deployments
     BASE_DIR = pathlib.Path(__file__).parent.parent.resolve()
     DIST_DIR = BASE_DIR / "dist"
-    app.mount("/", StaticFiles(directory=str(DIST_DIR), html=True), name="static")
-    return app
 
+    # app.mount("/", StaticFiles(directory=str(DIST_DIR), html=True), name="static")
+
+    @app.get("/{path:path}")
+    async def serve_spa(path: str):
+        # Build the actual path to the file
+        file_path = os.path.join(DIST_DIR, path)
+
+        # If the requested path is a real file (css, js, images), serve it
+        if os.path.isfile(file_path):
+            return FileResponse(file_path)
+
+        # Otherwise, serve index.html so React Router can take over
+        return FileResponse(os.path.join(DIST_DIR, "index.html"))
+    return app
 
 async def start_async():
     config = uvicorn.Config(create_fastapi(), host="0.0.0.0", port=8080, log_level="info")
