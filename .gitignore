@@ -1,3 +1,6 @@
 .idea
 *.env
 justfile
+thermostat-fe/node_modules
+thermostat-fe/dist
+thermostat-fe/.env*

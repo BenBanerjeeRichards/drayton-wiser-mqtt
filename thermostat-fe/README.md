@@ -1,0 +1,1 @@
+# Thermostat frontend app
