@@ -4,7 +4,11 @@ from pydantic import BaseModel
 from typing_extensions import Literal
 
 
-ControlSource = Literal["Boost", "Schedule", "Away", "Eco", "ManualOverride"]
+class BoostHeatingRequest(BaseModel):
+    temperature: float
+    duration_minutes: int
+
+ControlSource = Literal["Boost", "Schedule", "Away", "Eco", "ManualOverride", "Manual"]
 
 class Config(BaseModel):
     mqtt_username: str
@@ -13,6 +17,7 @@ class Config(BaseModel):
     mqtt_port: int
     wiser_ip: str
     wiser_secret: str
+    disable_mqtt: bool = False
 
 class HeatingChannelState(BaseModel):
     id: int
@@ -38,8 +43,12 @@ class RoomState(BaseModel):
     demand_percent: int
     is_firing: bool
     control_source: ControlSource
-    boost_ends_at_unix: int | None = None
     schedule_id: int | None
+    boost_ends_at_unix: int | None = None
+    next_schedule_unix: int | None = None
+    # next_setpoint_unix will be None if away mode is active or in manual control
+    # it consolidates all logic around boost, schedules etc in one place
+    next_setpoint_unix: int | None
 
 
 class RoomStatState(BaseModel):
@@ -210,7 +219,8 @@ class Room(BaseModel):
     SmartValveIds: list[int] | None = None
     # Just the room name  (e.g. "Living Room")
     Name: str
-    Mode: str
+    # Are we following the schedule (auto) or not
+    Mode: Literal["Manual", "Auto"]
     DemandType: str | None = None
     WindowDetectionActive: bool
     # Room temperature effective for use for the control of the room
@@ -291,6 +301,7 @@ class DeviceCapabilityMatrix(BaseModel):
 
 
 class SetPoint(BaseModel):
+    # When this schedule item starts, in unix timestamp
     Time: int
     DegreesC: int
 
