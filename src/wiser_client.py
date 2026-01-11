@@ -188,7 +188,7 @@ def get_next_schedule_setpoint(schedule: Schedule, now: datetime.datetime) -> tu
     minutes_into_day = now.hour * 100 + now.minute
     # If we are currently in the final schedule of the day, then the next schedule starts tomorrow
     if minutes_into_day > day_schedule.SetPoints[-1].Time:
-        tomorrow_schedule = schedule_indexed[now.weekday() + 1 % 7]
+        tomorrow_schedule = schedule_indexed[(now.weekday() + 1) % 7]
         return (now + datetime.timedelta(days=1)).date(), tomorrow_schedule.SetPoints[0].Time
 
     # if we before the first schedule of the day, we will be on the previous day schedule still
