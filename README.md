@@ -30,7 +30,6 @@ spec:
     spec:
       imagePullSecrets:
         - name: ghcr
-      hostNetwork: true
       nodeSelector:
         kubernetes.io/hostname: raspberrypi
       containers:

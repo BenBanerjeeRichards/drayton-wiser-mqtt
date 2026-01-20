@@ -1,7 +1,7 @@
 import os
 import asyncio
 import pathlib
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, AsyncExitStack
 from typing import Annotated
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -27,12 +27,21 @@ logging.basicConfig(
 
 async def mqtt_main(config: Config, cached_wiser_client: CachedWiserClient):
     try:
-        async with Client(config.mqtt_host, port=config.mqtt_port, username=config.mqtt_username,
-                          password=config.mqtt_password) as client:
-            mqtt = WiserMqtt(config, cached_wiser_client, client)
+        async with AsyncExitStack() as stack:
+            mqtt_client = None
+            if config.mqtt_host and not config.disable_mqtt:
+                mqtt_client = await stack.enter_async_context(
+                    Client(config.mqtt_host, port=config.mqtt_port, username=config.mqtt_username,
+                           password=config.mqtt_password))
+
+            mqtt = None if not mqtt_client else WiserMqtt(cached_wiser_client, mqtt_client)
 
             while True:
-                await mqtt.publish_data()
+                state = await cached_wiser_client.get(ignore_cache=True)
+                if mqtt:
+                    await mqtt.publish_data(state)
+                else:
+                    logging.info("MQTT not configured or disabled, skipping publishing")
                 await asyncio.sleep(60)
     except Exception as e:
         # We want to quit the entire application if there is an unhandled error
@@ -42,11 +51,17 @@ async def mqtt_main(config: Config, cached_wiser_client: CachedWiserClient):
 
 
 def load_config() -> Config:
+    has_mqtt = os.environ.get("MQTT_HOST")
+    if has_mqtt:
+        assert "MQTT_PORT" in os.environ
+        assert "MQTT_USERNAME" in os.environ
+        assert "MQTT_PASSWORD" in os.environ
+
     return Config(
-        mqtt_host=os.environ["MQTT_HOST"],
-        mqtt_port=int(os.environ["MQTT_PORT"]),
-        mqtt_username=os.environ["MQTT_USERNAME"],
-        mqtt_password=os.environ["MQTT_PASSWORD"],
+        mqtt_host=os.environ.get("MQTT_HOST"),
+        mqtt_port=None if not has_mqtt else int(os.environ["MQTT_PORT"]),
+        mqtt_username=os.environ.get("MQTT_USERNAME"),
+        mqtt_password=os.environ.get("MQTT_PASSWORD"),
         wiser_ip=os.environ["WISER_IP"],
         wiser_secret=os.environ["WISER_SECRET"],
         disable_mqtt=os.environ.get("DISABLE_MQTT", "false").lower() == "true",
@@ -116,7 +131,6 @@ def create_fastapi():
         info = await cached_wiser.get(ignore_cache=True)
         return info.model_dump()
 
-
     # Serve react application from here
     # In the future we should really split this up to allow separate deployments
     BASE_DIR = pathlib.Path(__file__).parent.parent.resolve()
@@ -135,7 +149,9 @@ def create_fastapi():
 
         # Otherwise, serve index.html so React Router can take over
         return FileResponse(os.path.join(DIST_DIR, "index.html"))
+
     return app
+
 
 async def start_async():
     config = uvicorn.Config(create_fastapi(), host="0.0.0.0", port=8080, log_level="info")

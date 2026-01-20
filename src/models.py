@@ -17,10 +17,10 @@ ControlSource = Literal["Boost", "Schedule", "Away", "Eco", "ManualOverride", "M
 
 
 class Config(BaseModel):
-    mqtt_username: str
-    mqtt_password: str
-    mqtt_host: str
-    mqtt_port: int
+    mqtt_username: str | None
+    mqtt_password: str | None
+    mqtt_host: str | None
+    mqtt_port: int | None
     wiser_ip: str
     wiser_secret: str
     disable_mqtt: bool = False
