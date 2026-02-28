@@ -240,17 +240,11 @@ class Room(BaseModel):
     # Otherwise will be smaller gap used to drive time or OT based modulation
     PercentageDemand: int | None = None
     # Does we show as 'firing'
-    ControlOutputState: Literal['On', 'Off']
+    ControlOutputState: Literal['On', 'Off'] = 'Off'
     DisplayedSetPoint: int
     # If we were following the schedule, what should the setpoint be
     ScheduledSetPoint: int
-    AwayModeSuppressed: bool
-    RoundedAlexaTemperature: int
-    ComfortTarget: int | None = None
-    EffectiveMode: str
-    PercentageDemandForItrv: int
-    ControlDirection: str
-    HeatingType: str | None = None
+    AwayModeSuppressed: bool = False
     # If set this room is not used, and a reason will be given
     Invalid: str | None = None
 
@@ -333,14 +327,8 @@ class Schedule(BaseModel):
 # --- Root Model ---
 
 class WiserRoot(BaseModel):
-    System: System
-    Cloud: Cloud
     HeatingChannel: list[HeatingChannel]
     HotWater: list[HotWater]
     Room: list[Room]
-    Device: list[Device]
-    Zigbee: Zigbee
-    SmartValve: list[Any]
     RoomStat: list[RoomStat]
-    DeviceCapabilityMatrix: DeviceCapabilityMatrix
     Schedule: list[Schedule]
