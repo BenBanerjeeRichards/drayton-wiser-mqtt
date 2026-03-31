@@ -134,43 +134,7 @@ class Reception(BaseModel):
 # --- Main Component Models ---
 
 class System(BaseModel):
-    PairingStatus: str
-    provisionTokenSucceedCount: int
-    provisionTokenFailCount: int
-    provisionTokenRequestCount: int
-    TimeZoneOffset: int
-    AutomaticDaylightSaving: bool
-    SystemMode: str
-    FotaEnabled: bool
-    ValveProtectionEnabled: bool
-    EcoModeEnabled: bool
-    AwayModeAffectsHotWater: bool
-    AwayModeSetPointLimit: int
-    BoilerSettings: BoilerSettings
-    CoolingModeDefaultSetpoint: int
-    CoolingAwayModeSetpointLimit: int
-    ComfortModeEnabled: bool
-    PreheatTimeLimit: int
-    DegradedModeSetpointThreshold: int
-    GeoPosition: GeoPosition
-    UfhOrphanModeOutput: str
-    isMigrated: bool
-    UnixTime: int
-    ActiveSystemVersion: str
-    ZigbeePermitJoinActive: bool
-    BrandName: str
-    CloudConnectionStatus: str
-    ChipId: str
     LocalDateAndTime: LocalDateAndTime
-    HeatingButtonOverrideState: str
-    UserOverridesActive: bool | None = None
-    HotWaterButtonOverrideState: str
-    OpenThermConnectionStatus: str
-    SunriseTimes: list[int]
-    SunsetTimes: list[int]
-    isTrialist: bool
-    isProvisioned: bool
-    HardwareGeneration: int
 
 
 class Cloud(BaseModel):
@@ -303,8 +267,7 @@ class DeviceCapabilityMatrix(BaseModel):
 
 
 class SetPoint(BaseModel):
-    # When this schedule item starts, in unix timestamp
-    Time: int
+    Time: int       # Schedule in HHMM in local time zone (e.g. 22:30 = 2230)
     DegreesC: int
 
 
@@ -332,3 +295,4 @@ class WiserRoot(BaseModel):
     Room: list[Room]
     RoomStat: list[RoomStat]
     Schedule: list[Schedule]
+    System: System

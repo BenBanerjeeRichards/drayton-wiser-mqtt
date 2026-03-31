@@ -5,6 +5,7 @@ from typing import Literal
 import httpx
 from tenacity import retry, wait_exponential, stop_after_attempt
 
+from models import LocalDateAndTime
 from src.models import WiserRoot, WiserState, RoomStatState, RoomState, HeatingChannelState, \
     HotWaterChannelState, SetpointOrigin, ControlSource, Schedule, SetPoint
 
@@ -84,6 +85,31 @@ class WiserApi:
             return WiserRoot(**res.json())
 
 
+def get_timezone_offset(local_time: int) -> int:
+    """
+    converts a wiser local_time to the timezone offset
+    :param local_time: in wiser format -e.g. HHMM
+    :return: the timezone offset from utc in minutes. e.g. 60 means local_time is utc+1
+    """
+    # Returns the offset from UTC in minutes
+    # The wiser stat does not report a TZ, so we instead infer it from the datetime it reports
+    now_utc = datetime.datetime.now(datetime.UTC)
+    local_hour = int(local_time / 100)
+    local_minute = local_time - local_hour * 100
+
+    # the number of minutes into the day - e.g. 3.30pm = 15 * 60 + 30 = 930
+    now_day_minutes = now_utc.hour * 60 + now_utc.minute
+    local_day_minute = local_hour * 60 + local_minute
+
+    minute_offset = local_day_minute - now_day_minutes
+    # modular arithmatic
+    if minute_offset < -12 * 24:
+        minute_offset = 24 * 60 + minute_offset
+
+    # round result to nearest 5 minute to account for timing differences
+    return 5 * round(minute_offset / 5)
+
+
 # This does the job of translating the fairly complex state on the wiser hub into
 # more simple constructs We have a few different modes:
 # Manual:          The thermostat setpoint remains as is until manual intervention
@@ -102,11 +128,14 @@ def wiser_to_state(info: WiserRoot) -> WiserState:
         SetpointOrigin.MANUAL_OVERRIDE: "ManualOverride",
         SetpointOrigin.MANUAL_MODE: "Manual"
     }
+    minutes_offset = get_timezone_offset(info.System.LocalDateAndTime.Time)
     room_stats = [
         RoomStatState(id=s.id,
                       temperature=s.MeasuredTemperature / 10.0,
                       humidity=s.MeasuredHumidity) for s in info.RoomStat
     ]
+    import logging
+    logging.info("timezone offset=%s", minutes_offset)
 
     rooms = []
     for room in info.Room:
@@ -117,7 +146,7 @@ def wiser_to_state(info: WiserRoot) -> WiserState:
             schedule_setpoint_unix = None
             if room.Mode == "Auto":  # i.e. we are following a defined schedule
                 schedule = [s for s in info.Schedule if s.id == room.ScheduleId]
-                schedule_setpoint_unix = get_next_schedule_timestamp(schedule[0] if schedule else None)
+                schedule_setpoint_unix = get_next_schedule_timestamp(schedule[0] if schedule else None, minutes_offset)
                 control_source = map_control_source[room.SetpointOrigin]
 
                 if room.SetpointOrigin == SetpointOrigin.MANUAL_OVERRIDE and room.OverrideSetpoint == room.ScheduledSetPoint:
@@ -167,15 +196,16 @@ def wiser_to_state(info: WiserRoot) -> WiserState:
     return WiserState(hot_water_channels=hot_waters, heating_channels=heatings, room_stats=room_stats, rooms=rooms)
 
 
-def get_next_schedule_timestamp(room_schedule: Schedule | None) -> int | None:
+
+def get_next_schedule_timestamp(room_schedule: Schedule | None, minutes_offset: int) -> int | None:
     if not room_schedule:
         return None
-    schedule_start = get_next_schedule_setpoint(room_schedule, datetime.datetime.now())
+    schedule_start = get_next_schedule_setpoint(room_schedule, datetime.datetime.now(datetime.UTC))
     if not schedule_start:
         return None
 
     dt, time = schedule_start
-    return _wiser_schedule_to_unix(dt, time)
+    return _wiser_schedule_to_unix(dt, time, minutes_offset)
 
 
 # pass in time to make unit testing easier
@@ -206,8 +236,10 @@ def get_next_schedule_setpoint(schedule: Schedule, now: datetime.datetime) -> tu
     return None
 
 
-def _wiser_schedule_to_unix(date: datetime.date, wiser_time: int) -> int:
+def _wiser_schedule_to_unix(date: datetime.date, wiser_time: int, minutes_offset: int) -> int:
+    # wiser_time is in local timezone format
     hour = int(wiser_time / 100)
     minute = wiser_time - hour * 100
-    dt = datetime.datetime(year=date.year, month=date.month, day=date.day, hour=hour, minute=minute, second=0)
-    return int(dt.timestamp())
+    # assume UTC and then we dajust later on
+    dt = datetime.datetime(year=date.year, month=date.month, day=date.day, hour=hour, minute=minute, second=0, tzinfo=datetime.UTC)
+    return int(dt.timestamp()) - minutes_offset * 60
