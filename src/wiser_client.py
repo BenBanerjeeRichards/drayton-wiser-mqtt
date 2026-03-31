@@ -1,13 +1,10 @@
 import datetime
 from typing import Literal
 
-
 import httpx
 from tenacity import retry, wait_exponential, stop_after_attempt
-
-from models import LocalDateAndTime
 from src.models import WiserRoot, WiserState, RoomStatState, RoomState, HeatingChannelState, \
-    HotWaterChannelState, SetpointOrigin, ControlSource, Schedule, SetPoint
+    HotWaterChannelState, SetpointOrigin, ControlSource, Schedule
 
 
 class WiserClient:
@@ -134,8 +131,6 @@ def wiser_to_state(info: WiserRoot) -> WiserState:
                       temperature=s.MeasuredTemperature / 10.0,
                       humidity=s.MeasuredHumidity) for s in info.RoomStat
     ]
-    import logging
-    logging.info("timezone offset=%s", minutes_offset)
 
     rooms = []
     for room in info.Room:
@@ -240,6 +235,6 @@ def _wiser_schedule_to_unix(date: datetime.date, wiser_time: int, minutes_offset
     # wiser_time is in local timezone format
     hour = int(wiser_time / 100)
     minute = wiser_time - hour * 100
-    # assume UTC and then we dajust later on
+    # assume UTC and then we adjust later on
     dt = datetime.datetime(year=date.year, month=date.month, day=date.day, hour=hour, minute=minute, second=0, tzinfo=datetime.UTC)
     return int(dt.timestamp()) - minutes_offset * 60

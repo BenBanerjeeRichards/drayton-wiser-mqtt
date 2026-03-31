@@ -60,7 +60,7 @@ export const boostHeating = async (
 ): Promise<WiserState> => {
   const nowInSeconds = Math.floor(Date.now() / 1000);
   const diffInSeconds = setpoint.untilUnix - nowInSeconds;
-  const minutesAway = Math.floor(diffInSeconds / 60);
+  const minutesAway = Math.ceil(diffInSeconds / 60);
   const res = await fetch(`${ENDPOINT}/heating/${roomId}/boost`, {
     method: "PATCH",
     body: JSON.stringify({
