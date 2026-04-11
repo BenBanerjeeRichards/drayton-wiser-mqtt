@@ -195,7 +195,7 @@ def wiser_to_state(info: WiserRoot) -> WiserState:
 def get_next_schedule_timestamp(room_schedule: Schedule | None, minutes_offset: int) -> int | None:
     if not room_schedule:
         return None
-    schedule_start = get_next_schedule_setpoint(room_schedule, datetime.datetime.now(datetime.UTC))
+    schedule_start = get_next_schedule_setpoint(room_schedule, datetime.datetime.now(datetime.UTC), minutes_offset)
     if not schedule_start:
         return None
 
@@ -204,13 +204,14 @@ def get_next_schedule_timestamp(room_schedule: Schedule | None, minutes_offset: 
 
 
 # pass in time to make unit testing easier
-def get_next_schedule_setpoint(schedule: Schedule, now: datetime.datetime) -> tuple[datetime.date, int] | None:
+def get_next_schedule_setpoint(schedule: Schedule, now: datetime.datetime, minutes_offset: int) -> tuple[datetime.date, int] | None:
     schedule_indexed = [schedule.Monday, schedule.Tuesday, schedule.Wednesday, schedule.Thursday, schedule.Friday,
                         schedule.Saturday,
                         schedule.Sunday]
     day_schedule = schedule_indexed[now.weekday()]
     # convert to wiser format - 17:30 -> 1730
-    minutes_into_day = now.hour * 100 + now.minute
+    # add offset to match timezone wiser is in (if UTC+1 ,then minutes_offset = 60)
+    minutes_into_day = now.hour * 100 + now.minute + minutes_offset
     # If we are currently in the final schedule of the day, then the next schedule starts tomorrow
     if minutes_into_day > day_schedule.SetPoints[-1].Time:
         tomorrow_schedule = schedule_indexed[(now.weekday() + 1) % 7]
