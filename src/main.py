@@ -43,11 +43,10 @@ async def mqtt_main(config: Config, cached_wiser_client: CachedWiserClient):
                 else:
                     logging.info("MQTT not configured or disabled, skipping publishing")
                 await asyncio.sleep(60)
-    except Exception as e:
+    except Exception:
         # We want to quit the entire application if there is an unhandled error
-        # Otherwise the task will stop without any other effect
         logging.exception("MQTT main loop failed")
-        raise SystemExit(1) from e
+        os._exit(1)
 
 
 def load_config() -> Config:
