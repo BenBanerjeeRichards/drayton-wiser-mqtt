@@ -13,7 +13,7 @@ class BoostHotWaterRequest(BaseModel):
     duration_minutes: int
 
 
-ControlSource = Literal["Boost", "Schedule", "Away", "Eco", "ManualOverride", "Manual"]
+ControlSource = Literal["Boost", "Schedule", "Away", "Eco", "ManualOverride", "Manual", "FromManualOverrideDuringAway"]
 
 
 class Config(BaseModel):
@@ -79,11 +79,13 @@ class WiserState(BaseModel):
 class SetpointOrigin(str, Enum):
     SCHEDULE = "FromSchedule"
     MANUAL_OVERRIDE = "FromManualOverride"
+    MANUAL_OVERRIDE_AWAY = "FromManualOverrideDuringAway"
     BOOST = "FromBoost"
     NO_CONTROL = "FromNoControl"
     AWAY = "FromAwayMode"
     ECO_IQ = "FromEcoIQ"
     MANUAL_MODE = "FromManualMode"
+
 
 
 class BoilerSettings(BaseModel):

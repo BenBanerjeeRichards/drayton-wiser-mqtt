@@ -122,8 +122,9 @@ def wiser_to_state(info: WiserRoot) -> WiserState:
         SetpointOrigin.SCHEDULE: "Schedule",
         SetpointOrigin.AWAY: "Away",
         SetpointOrigin.ECO_IQ: "Eco",
-        SetpointOrigin.MANUAL_OVERRIDE: "ManualOverride",
-        SetpointOrigin.MANUAL_MODE: "Manual"
+        SetpointOrigin.MANUAL_OVERRIDE: "FromManualOverrideDuringAway",
+        SetpointOrigin.MANUAL_OVERRIDE_AWAY: "ManualOverride",
+        SetpointOrigin.MANUAL_MODE: "Manual",
     }
     minutes_offset = get_timezone_offset(info.System.LocalDateAndTime.Time)
     room_stats = [
